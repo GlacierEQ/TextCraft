@@ -5,9 +5,7 @@ namespace TextForge
     public sealed class AppSettings : ApplicationSettingsBase
     {
         private static readonly AppSettings _instance = new AppSettings();
-        
         public static AppSettings Instance => _instance;
-
         private AppSettings() { }
 
         [UserScopedSetting]

@@ -247,6 +247,9 @@ namespace TextForge
 
         public static async Task AddComment(Comments comments, Range range, AsyncCollectionResult<StreamingChatCompletionUpdate> streamingContent)
         {
+            if (comments == null)
+                throw new ArgumentNullException(nameof(comments));
+
             Word.Comment c = comments.Add(range, string.Empty);
             c.Author = ThisAddIn.Model;
             Word.Range commentRange = c.Range.Duplicate;

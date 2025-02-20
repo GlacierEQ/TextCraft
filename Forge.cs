@@ -1,5 +1,4 @@
 ﻿﻿using System;
-using System.ClientModel;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,20 +8,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Office.Interop.Word;
-using Microsoft.Office.Tools;
 using Microsoft.Office.Tools.Ribbon;
 using System.Configuration;
 using PDFTron.WebViewer;
 using PDFTron.WebViewer.Controls;
 using PDFTron.WebViewer.Tools;
 using TextForge.Services;
-
-using TextForge.Services;
-
-using TextForge.Services;
-
-using TextForge.Services;
-
 
 using Task = System.Threading.Tasks.Task;
 using Word = Microsoft.Office.Interop.Word;
@@ -31,44 +22,19 @@ namespace TextForge
 {
     public partial class Forge
     {
+        // Single field and constructor declaration
         private readonly ErrorHandlingService _errorHandler;
-
         public Forge(ErrorHandlingService errorHandler)
         {
             _errorHandler = errorHandler;
         }
 
-    {
-        private readonly ErrorHandlingService _errorHandler;
-
-        public Forge(ErrorHandlingService errorHandler)
-        {
-            _errorHandler = errorHandler;
-        }
-
-    {
-        private readonly ErrorHandlingService _errorHandler;
-
-        public Forge(ErrorHandlingService errorHandler)
-        {
-            _errorHandler = errorHandler;
-        }
-
-    {
-        private readonly ErrorHandlingService _errorHandler;
-
-        public Forge(ErrorHandlingService errorHandler)
-        {
-            _errorHandler = errorHandler;
-        }
-
-    {
-        // Public
+        // Public members
         public static SystemChatMessage CommentSystemPrompt;
         public static readonly CultureLocalizationHelper CultureHelper = new CultureLocalizationHelper("TextForge.Forge", typeof(Forge).Assembly);
         public static readonly object InitializeDoor = new object();
 
-        // Private
+        // Private members
         private AboutBox _box;
         private static RibbonGroup _optionsBox;
 

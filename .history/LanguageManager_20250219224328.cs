@@ -16,7 +16,8 @@ namespace TextForge
         private static readonly string _localLanguagePath = "Localization/";
         private static readonly ConcurrentDictionary<string, bool> _downloadedLanguages = new();
         private static readonly object _downloadLock = new();
-        private static readonly Regex _languageCodeRegex = new(@"^[a-z]{2}(-[A-Z]{2})?$");
+        // Updated regex with RegexOptions.Compiled for performance
+        private static readonly Regex _languageCodeRegex = new Regex(@"^[a-z]{2}(-[A-Z]{2})?$", RegexOptions.Compiled);
 
         public static async Task DownloadLanguageAsync(string languageCode, IProgress<int> progress = null)
         {

@@ -18,9 +18,7 @@ namespace TextForge
             
             public bool IsGrantedAccess(string website)
             {
-                bool result;
-                _rememberAccess.TryGetValue(website, out result);
-                return result;
+                return _rememberAccess.TryGetValue(website, out var result) && result;
             }
 
             public void Grant(string website)
