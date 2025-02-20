@@ -2,7 +2,6 @@
 using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Office.Interop.Word;
@@ -21,17 +20,13 @@ namespace TextForge
         {
             try
             {
-                var app = Globals.ThisAddIn?.Application;
-                if (app == null) return;
-                
-                var doc = app.ActiveDocument;
-                if (doc == null) return;
-                
-                int numComments = doc.Comments?.Count ?? 0;
+                var doc = Globals.ThisAddIn.Application.ActiveDocument;
+                int numComments = doc.Comments.Count;
                 
                 if (numComments == _prevNumComments) 
                     return;
 
+                // Process both tasks in parallel
                 var tasks = new List<Task<bool>> 
                 {
                     AICommentReplyTask(),
@@ -51,12 +46,7 @@ namespace TextForge
 
         private static async Task<bool> AICommentReplyTask()
         {
-            var app = Globals.ThisAddIn?.Application;
-            if (app == null) return false;
-            
-            var doc = app.ActiveDocument;
-            if (doc == null) return false;
-            
+            var doc = Globals.ThisAddIn.Application.ActiveDocument;
             var comments = GetUnansweredAIComments(doc.Comments);
             
             if (_isDraftingComment || !comments.Any())
@@ -107,13 +97,8 @@ namespace TextForge
 
         private static async Task<bool> UserMentionTask()
         {
-            var app = Globals.ThisAddIn?.Application;
-            if (app == null) return false;
-            
-            var doc = app.ActiveDocument;
-            if (doc == null) return false;
-            
-            var comments = GetUnansweredMentionedComments(doc.Comments);
+            var comments = GetUnansweredMentionedComments(Globals.ThisAddIn.Application.ActiveDocument.Comments);
+            var doc = Globals.ThisAddIn.Application.ActiveDocument;
             foreach (var comment in comments)
             {
                 List<ChatMessage> chatHistory = new List<ChatMessage>();
@@ -137,15 +122,12 @@ namespace TextForge
                         )
                     );
                     
+                    _isDraftingComment = false;
                     return true;
                 }
                 catch (OperationCanceledException ex)
                 {
                     CommonUtils.DisplayWarning(ex);
-                }
-                finally
-                {
-                    _isDraftingComment = false;
                 }
             }
             return false;
@@ -265,50 +247,36 @@ namespace TextForge
 
         public static async Task AddComment(Comments comments, Range range, AsyncCollectionResult<StreamingChatCompletionUpdate> streamingContent)
         {
-            if (comments == null || range == null) return;
-            
-            Word.Comment c = null;
-            Word.Range commentRange = null;
-            try
+            Word.Comment c = comments.Add(range, string.Empty);
+            c.Author = ThisAddIn.Model;
+            Word.Range commentRange = c.Range.Duplicate;
+
+            StringBuilder comment = new StringBuilder();
+
+            await Task.Run(async () =>
             {
-                c = comments.Add(range, string.Empty);
-                if (c == null) return;
-                
-                c.Author = ThisAddIn.Model;
-                commentRange = c.Range.Duplicate;
-
-                StringBuilder comment = new StringBuilder();
-
-                await Task.Run(async () =>
+                Forge.CancelButtonVisibility(true);
+                try
                 {
-                    Forge.CancelButtonVisibility(true);
-                    try
+                    await foreach (var update in streamingContent.WithCancellation(ThisAddIn.CancellationTokenSource.Token))
                     {
-                        await foreach (var update in streamingContent.WithCancellation(ThisAddIn.CancellationTokenSource.Token))
+                        if (ThisAddIn.CancellationTokenSource.IsCancellationRequested)
+                            break;
+                        foreach (var content in update.ContentUpdate)
                         {
-                            if (ThisAddIn.CancellationTokenSource.IsCancellationRequested)
-                                break;
-                            foreach (var content in update.ContentUpdate)
-                            {
-                                commentRange.Collapse(Word.WdCollapseDirection.wdCollapseEnd);
-                                commentRange.Text = content.Text;
-                                commentRange = c.Range.Duplicate;
-                                comment.Append(content.Text);
-                            }
+                            commentRange.Collapse(Word.WdCollapseDirection.wdCollapseEnd);
+                            commentRange.Text = content.Text;
+                            commentRange = c.Range.Duplicate;
+                            comment.Append(content.Text);
                         }
                     }
-                    finally
-                    {
-                        Forge.CancelButtonVisibility(false);
-                    }
-                    c.Range.Text = WordMarkdown.RemoveMarkdownSyntax(comment.ToString());
-                });
-            }
-            finally
-            {
-                if (commentRange != null) Marshal.ReleaseComObject(commentRange);
-                if (c != null) Marshal.ReleaseComObject(c);
-            }
+                }
+                finally
+                {
+                    Forge.CancelButtonVisibility(false);
+                }
+                c.Range.Text = WordMarkdown.RemoveMarkdownSyntax(comment.ToString());
+            });
         }
     }
 }

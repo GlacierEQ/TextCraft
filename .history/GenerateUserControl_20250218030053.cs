@@ -31,6 +31,10 @@ namespace TextForge
                 if (textBoxContent.Length == 0)
                     throw new EmptyTextBoxException(CultureHelper.GetLocalizedString("[GenerateButton_Click] TextBoxEmptyException #1"));
 
+                /*
+                 * So, If the user changes the selection carot in Word after clicking "generate" (bc it takes so long to generate text).
+                 * Then, it won't affect where the text is placed.
+                 */
                 var rangeBeforeChat = Globals.ThisAddIn.Application.Selection.Range;
                 var docRange = Globals.ThisAddIn.Application.ActiveDocument.Range();
 
@@ -49,30 +53,13 @@ namespace TextForge
                 }
                 else
                 {
-                    if (AppSettings.Instance.EnableMemoryOptimization && textBoxContent.Length > AppSettings.Instance.ChunkSize)
-                    {
-                        var chunks = SplitTextIntoChunks(textBoxContent, AppSettings.Instance.ChunkSize);
-                        foreach (var chunk in chunks)
-                        {
-                            var streamingAnswer = RAGControl.AskQuestion(
-                                new SystemChatMessage(ThisAddIn.SystemPromptLocalization["(GenerateUserControl.cs) _systemPrompt"]),
-                                new List<UserChatMessage> { new UserChatMessage(chunk) },
-                                docRange,
-                                GetTemperature()
-                            );
-                            await Forge.AddStreamingChatContentToRange(streamingAnswer, rangeBeforeChat);
-                        }
-                    }
-                    else
-                    {
-                        var streamingAnswer = RAGControl.AskQuestion(
-                            new SystemChatMessage(ThisAddIn.SystemPromptLocalization["(GenerateUserControl.cs) _systemPrompt"]),
-                            new List<UserChatMessage> { new UserChatMessage(textBoxContent) },
-                            docRange,
-                            GetTemperature()
-                        );
-                        await Forge.AddStreamingChatContentToRange(streamingAnswer, rangeBeforeChat);
-                    }
+                    var streamingAnswer = RAGControl.AskQuestion(
+                        new SystemChatMessage(ThisAddIn.SystemPromptLocalization["(GenerateUserControl.cs) _systemPrompt"]),
+                        new List<UserChatMessage> { new UserChatMessage(textBoxContent) },
+                        docRange,
+                        GetTemperature()
+                    );
+                    await Forge.AddStreamingChatContentToRange(streamingAnswer, rangeBeforeChat);
                 }
 
                 Globals.ThisAddIn.Application.Selection.SetRange(rangeBeforeChat.Start, rangeBeforeChat.End);
@@ -161,31 +148,6 @@ namespace TextForge
         private float GetTemperature()
         {
             return this.TemperatureTrackBar.Value / 10f;
-        }
-
-        private List<string> SplitTextIntoChunks(string text, int chunkSize)
-        {
-            var chunks = new List<string>();
-            for (int i = 0; i < text.Length; i += chunkSize)
-            {
-                int length = Math.Min(chunkSize, text.Length - i);
-                chunks.Add(text.Substring(i, length));
-            }
-            return chunks;
-        }
-
-        private void CleanupResources()
-        {
-            try
-            {
-                // Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-            }
-            catch (Exception ex)
-            {
-                CommonUtils.DisplayWarning($"Resource cleanup warning: {ex.Message}");
-            }
         }
     }
 

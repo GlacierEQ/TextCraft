@@ -166,15 +166,6 @@ namespace TextForge
             if (key != null)
                 dest = key;
         }
-
-        public static void MonitorMemoryUsage()
-        {
-            try
-            {
-                var process = System.Diagnostics.Process.GetCurrentProcess();
-                long memoryUsageMB = process.WorkingSet64 / 1024 / 1024;
-                if (memoryUsageMB > 500) // Warn if memory usage exceeds 500MB
-                {
     }
 
     public class CultureLocalizationHelper

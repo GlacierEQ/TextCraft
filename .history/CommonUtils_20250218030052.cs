@@ -34,27 +34,7 @@ namespace TextForge
             }
         }
 
-        private static readonly object _httpClientLock = new object();
-        private static HttpClient _client;
-
-        public static HttpClient Client
-        {
-            get
-            {
-                lock (_httpClientLock)
-                {
-                    if (_client == null)
-                    {
-                        _client = new HttpClient
-                        {
-                            Timeout = TimeSpan.FromSeconds(30)
-                        };
-                    }
-                    return _client;
-                }
-            }
-        }
-        private static readonly object _accessChoiceLock = new object();
+        public static readonly HttpClient client = new HttpClient();
         private static RememberAccessChoice _accessChoice = new RememberAccessChoice();
 
         public static void ConfigureTLS()
@@ -166,15 +146,6 @@ namespace TextForge
             if (key != null)
                 dest = key;
         }
-
-        public static void MonitorMemoryUsage()
-        {
-            try
-            {
-                var process = System.Diagnostics.Process.GetCurrentProcess();
-                long memoryUsageMB = process.WorkingSet64 / 1024 / 1024;
-                if (memoryUsageMB > 500) // Warn if memory usage exceeds 500MB
-                {
     }
 
     public class CultureLocalizationHelper
